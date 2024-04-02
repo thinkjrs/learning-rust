@@ -21,9 +21,15 @@ fn main() {
     println!("Fibonacci number {input} computed recursively is {recursive_computed_fibonacci}. Execution time: {elapsed:.2?}.");
 
     let now = Instant::now();
+    let iterative_computed_fibonacci = fibonacci_iterative(input);
+    let elapsed = now.elapsed();
+    println!("Fibonacci number {input} computed using iteration is {iterative_computed_fibonacci}. Execution time: {elapsed:.2?}.");
+
+    let input = input as usize;
+    let now = Instant::now();
     let array_computed_fibonacci = fibonacci_array(input);
     let elapsed = now.elapsed();
-    println!("Fibonacci number {input} computed using an array is {array_computed_fibonacci}. Execution time: {elapsed:.2?}.");
+    println!("Fibonacci number {input} computed using bottom up array method is {array_computed_fibonacci}. Execution time: {elapsed:.2?}.");
 }
 
 // basic recurssive definition
@@ -35,8 +41,8 @@ fn fibonacci_recursive(n: u32) -> u32 {
     }
 }
 
-// array-based definition
-fn fibonacci_array(n: u32) -> u32 {
+// iteration-based definition
+fn fibonacci_iterative(n: u32) -> u32 {
     if n < 2 {
         n
     } else {
@@ -51,4 +57,15 @@ fn fibonacci_array(n: u32) -> u32 {
 
         b
     }
+}
+
+// array-based (bottom up) definition
+fn fibonacci_array(n: usize) -> usize {
+    let mut fib: Vec<usize> = Vec::new();
+    fib.push(0);
+    fib.push(1);
+    for i in 2..n + 1 {
+        fib.push(fib.get(i - 1).unwrap().clone() + fib.get(i - 2).unwrap().clone())
+    }
+    fib.get(n).unwrap().clone()
 }
