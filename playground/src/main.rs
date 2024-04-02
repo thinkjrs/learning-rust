@@ -19,6 +19,30 @@ fn main() {
     let world = second_word(&s);
 
     println!("{hello} {world}");
+
+    // Structs
+    let mut user1 = User {
+        active: true,
+        username: String::from("myusername123"),
+        email: String::from("myemail123@example.com"),
+        sign_in_count: 1,
+    };
+    println!("User created: {user1}");
+    // change the sign_in_count
+    user1.sign_in_count += 1;
+    println!("User modified: {user1}");
+    let user2 = build_user(
+        String::from("myemail456@example.com"),
+        String::from("myusername456"),
+    );
+    let user3 = User {
+        email: String::from("myemail789@example.com"),
+        username: String::from("myusername789"),
+        active: user1.active,
+        ..user2
+    };
+    println!("Other users: {user2}\n{user3}");
+    println!("User1: {user1}");
 }
 
 fn first_word(s: &str) -> &str {
@@ -43,4 +67,28 @@ fn second_word(s: &str) -> &str {
     }
 
     &s[..]
+}
+struct User {
+    active: bool,
+    username: String,
+    email: String,
+    sign_in_count: u64,
+}
+
+impl std::fmt::Display for User {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{{\n  active: {},\n  username: {},\n  email: {},\n  sign_in_count: {}\n}}",
+            self.active, self.username, self.email, self.sign_in_count
+        )
+    }
+}
+fn build_user(email: String, username: String) -> User {
+    User {
+        active: true,
+        username,
+        email,
+        sign_in_count: 1,
+    }
 }
