@@ -1,5 +1,23 @@
+#[derive(Debug)]
+struct Apple;
+#[derive(Debug)]
+struct Orange;
+#[derive(Debug)]
+struct ResponsiblySourcedTrout;
+
 fn main() {
+    // overflow panic
+    //let overflower: u8 = 1234;
+
+    //println!("{}", overflower);
     // immutable and mutable references
+    let tuple: (Apple, Orange, ResponsiblySourcedTrout) = (Apple, Orange, ResponsiblySourcedTrout);
+    println!("{tuple:#?}");
+
+    // arrays
+    let my_array = [3; 5];
+    println!("{:#?}", my_array);
+
     let mut s = String::from("hello");
 
     let r1 = &s;
@@ -74,7 +92,6 @@ struct User {
     email: String,
     sign_in_count: u64,
 }
-
 impl std::fmt::Display for User {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
