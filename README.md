@@ -321,3 +321,234 @@ Notice that Rust automagically inferred the type change. Cool, right?
 Staying on the `guess` shadowing, notice that we have a match and then some curly brackets with `Ok` and `Err` inside of them.
 
 This is how we handle errors in Rust. `parse` returns a `Result` type which is an enum that has the variants `Ok` and `Err`. If the user input is a valid number then it will match `Ok` and simply return the number. If the user input is not a valid number the `Err(_)` catchall simply returns `continue`, which means ignore the error and loop again (asking the user for another number).
+
+## Chapter 3. Normal Programming Stuff
+
+Here I suggest a thorough reading of [Chapter 3 of The Rust Programming Language](), as I won't dive too in-depth on anything covered. This chapter mainly covers standard idioms modern languages have on a high-level basis, setting up further exploration later.
+
+For now, let's record a few facts about the Rust programming language that are useful at this stage.
+
+### Immutable variables
+
+By default, variables are immutable in the Rust programming language. If you want to change them, you need to specify that to the compiler using `mut`.
+
+For example,
+
+```rust
+let x: u32 = 42;
+x = 41; // will not compile since you cannot re-assign to the immutable x
+```
+
+Here's how to make that mutable:
+
+```rust
+let mut x: u32 = 42;
+x = 43;
+```
+
+> Rust has constants as well. Simply use `const` and `AN_ALL_CAPS_VARIABLE_NAME`.
+
+### Shadowing
+
+As mentioned before, the language allows developers to _shadow_ variable. If you simply reuse `let` the variable can be _shadowed_.
+
+Shockingly, the following will compile and the compiler will forget the first value of `x`.
+
+```rust
+let x = 42;
+
+let x = 42 + 42; // 2 * (meaning of life)
+```
+
+The variable `x` is still immutable and the compiler will complain if we assign to it without using `let`.
+
+### Data types
+
+Rust has integers, floating point numbers, booleans and a character type. [Read about those via the docs](https://rust-book.cs.brown.edu/ch03-02-data-types.html).
+
+#### Integer overflow
+
+Rust will throw a compiler error when you compile your program for `debug` that will overflow, e.g. when using `cargo run`.
+
+Here's what that looks like:
+
+```rust
+let overflower: u8 = 4200;
+println!("{}", overflower);
+```
+
+```
+cargo run
+...
+error: literal out of range for `u8`
+...
+```
+
+Yet again, the lane bumpers save us. However, what happens for release builds? Rust performs [_two's complement wrapping_](https://en.wikipedia.org/wiki/Two%27s_complement). All that means is that the value wraps around to 0 after the max has been reached.
+
+For example, for a `u8` type, 256 becomes 0, 257 becomes 1 and 258 becomes 2. Easy.
+
+> Do not rely on this behavior to write your programs. That's considered a design error.
+
+#### String and `char` literals
+
+String literals and character literals aren't the same. `char` literals start with a single quote while string literals a double quote.
+
+The `char` type in Rust represents a Unicode scalar value so you can display accented letters, Japaneses, Chinese, Arabic and emojis. Anything UTF-8.
+
+### Tuples and arrays
+
+As usual, the tuple type is immutable and can hold different types in the same tuple.
+
+```rust
+struct Apple;
+struct Orange;
+struct ResponsiblySourcedTrout;
+
+let tup: (Apple, Orange, u32, ResponsiblySourcedTrout) = (Apple, Orange, 3, ResponsiblySourcedTrout);
+```
+
+The array is a fixed size array you are probably used to from other languages. Here's what that looks like with some syntax sugar, too.
+
+```rust
+let my_array = [1, 2, 3];
+let my_array = [3; 1028]; // 1028 elements all with the value of 3
+```
+
+### Statments and expressions
+
+Rust is an expression-based language. We'll skip over basic "statements" like `let x = 42` and jump right to the meat on the bone.
+
+An "expression" is a fundamental concept that represents a sequence of operations that computes a value. Expressions can consist of literals, variable references, operators, function calls, and control flow constructs among other components. Unlike statements, which perform actions but do not necessarily return a value, expressions always evaluate to a value and can be a part of other expressions.
+
+Let's gloss over a few examples. Here's a simple one, where the block that evaluates to 42 is the expression.
+
+```rust
+let the_meaning_of_life = {
+    42
+};
+```
+
+And if we use the `println!` macro to print it, that's an expression too!
+
+```rust
+println!("{}", the_meaning_of_life)
+```
+
+Of note, expressions don't have semicolons after them. Adding a semicolon makes it a statement. Nuff said.
+
+## Chapter 4. Ownership
+
+Ownership is a concept that is somewhat unusual and not present in other languages. Of the ones I know well -- Python, C++, JavaScript (TypeScript), Matlab, R -- I've been exposed to something like this only with respect to Smart Pointers within the C++ standard library.
+
+So what is _ownership_?
+
+> "_Ownership_ is a set of rules that govern how a Rust program manages memory. [Rust] memory is managed through a system of ownership with a set of rules that the compiler checks. If any of the rules are violated, the program won't compile. None of the features of ownership will slow down your program while it's running." - [Page 59 of the _Rust Programming Languages, 2nd Edition_](https://rust-book.cs.brown.edu/ch04-01-what-is-ownership.html)
+
+### Stack versus heap
+
+Without diving into the details of the modern computing machine, a Rust programmer needs to pay attention to and consider the _stack_ versus the _heap_.
+
+Let's hit up two heuristic ways to think about these things.
+
+#### The stack
+
+The _stack_ is like a literal stack of empty, ready-to-use pizza boxes. Assume you make pizzas and the boxes are next to you. You just pulled a piping hot pepperoni pie out of the oven and need to put it somewhere. Well you grab a box right off the top of the pile next to you and plop that fresh pie right in it.
+
+The stack is LIFO - last-in, first-out (like the pizza boxes on top).
+
+#### The heap
+
+The heap is like a giant [apple bobbing](https://en.wikipedia.org/wiki/Apple_bobbing) bucket full of water where all the apples are your data. When you allocated to the heap it's like putting your data in the bucket and it's floating. But imagine that it has an address carved into it like `0x2001FFE4`.
+
+> `0x2001FFE4` is super boring, right? I agree. But if we didn't use hexadecimal, we'd run out of literal bit space for numbers quickly. Hell, 0x2001FFE4 is 537,001,956 in decimal representation. Every single thing every single program does has one of these. Imagine how quickly that runs up.
+
+#### The stack is faster than the heap
+
+Because the allocator can just store something on the top, the stack is much faster at storing data than the heap, where the allocator has to search for a spot in the bucket to put its apples (figuratively, of course).
+
+I like to think of things like this: if I can statically allocate space it's vastly faster. But sometimes we need to dynamically allocate space, such as with user input.
+
+> Yes, writing a program to input what things Donald Trump says would use a lot of heap allocation.
+
+### Scope
+
+Rust automatically returns memory once the variable that owns that memory goes out of scope. It has no garbage collector and you don't need to manage the memory yourself.
+
+Yes, this is like bowling with the bumpers off but you never go into the gutter.
+
+> You might recognize a pattern like this from C++ smart pointers called [RAII - Resource Acquisition Is Initialization](https://learn.microsoft.com/en-us/cpp/cpp/object-lifetime-and-resource-management-modern-cpp?view=msvc-160).
+
+> _I know, I know...That's a Microsoft link. Use linux. Fck MSFT. Nah, they're cool. Cálmate! Satya made the company awesome._
+
+#### The basics
+
+Taking all the details out of it, which you should totally read from the actual proper rust book, let's dive into what you have to know.
+
+- Primitive data types, like `let x = 5` or `let y = [3; 5]`, are on the stack and get copied when you do things like assign them to other variables.
+
+- Complex and dynamic data types, on the other hand, are `drop`ed at the end of their lifetime, since they live on the heap.
+
+```rust
+// Stack-allocated variables
+let x: i32 = 10; // `x` is an integer stored directly on the stack.
+let y: bool = true; // `y` is a boolean value, also stored on the stack.
+
+// Heap-allocated
+let mut vec: Vec<i32> = Vec::new(); // `vec` is a struct with a pointer, length, and capacity, all of which are stored on the stack. The actual data of the vector is stored on the heap.
+vec.push(42); // Add an element to the heap-allocated vector.
+println!("Heap-allocated vector accessed through a stack-allocated struct: {:?}", vec);
+```
+
+Read this chapter thrice.
+
+### References and borrowing
+
+Creating a reference is called _borrowing_ in Rust. It's really, really important. You do it with placing an ampersand before a variable, e.g.
+
+```rust
+fn myfunc(my_string: &str) {}
+```
+
+It's [said best in the book](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html#references-and-borrowing) so here goes:
+
+> "As in real life, if a person owns something, you can borrow it from them. When you’re done, you have to give it back. You don’t own it."
+
+You can't modify things you borrow, you can only use them, unless the owner knows (and agrees that) you're going to modify things.
+
+Here's an example of a mutable reference:
+
+```rust
+let mut nose = String::from("my nose");
+
+operate_on_nose(&mut nose);
+
+fn operate_on_nose(something_on_which_to_perform_plastic_surgery: &mut String) {
+    something_on_which_to_perform_plastic_surgery.push(" is different now");
+}
+```
+
+### Slices
+
+A unique type of reference in Rust is the _slice_ which is a representation of a sequence of elements that are contiguous.
+
+You might be familiar with this concept from Python or other languages. Let's look at syntax and save the rest for later. In the meantime, read the [actual book on the topic.](https://doc.rust-lang.org/book/ch04-03-slices.html#the-slice-type)
+
+```rust
+// Slice example
+let s = String::from("hello world");
+
+let hello = first_word(&s);
+
+fn first_word(s: &str) -> &str {
+    let bytes = s.as_bytes();
+
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return &s[..i];
+        }
+    }
+
+    &s[..]
+}
+```
