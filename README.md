@@ -1,4 +1,47 @@
 # learning-rust
+<!-- vim-markdown-toc GFM -->
+
+* [Chapter 1. Getting Started](#chapter-1-getting-started)
+    * [Installing rustup on Linux](#installing-rustup-on-linux)
+        * [What's going on here](#whats-going-on-here)
+    * [The first program](#the-first-program)
+    * [Cargo FTW](#cargo-ftw)
+        * [Ready to release?](#ready-to-release)
+* [Chapter 2. A real (small) program](#chapter-2-a-real-small-program)
+    * [Code for "Guess the Number"](#code-for-guess-the-number)
+    * [Add the crate `rand`](#add-the-crate-rand)
+    * [Play the `guessing_game`](#play-the-guessing_game)
+    * [Line-by-line breakdown](#line-by-line-breakdown)
+    * [Awesome details](#awesome-details)
+        * [Rust's static type system](#rusts-static-type-system)
+        * [Shadowing variables](#shadowing-variables)
+        * [Type inference](#type-inference)
+        * [The `Result` enum](#the-result-enum)
+* [Chapter 3. Normal Programming Stuff](#chapter-3-normal-programming-stuff)
+    * [Immutable variables](#immutable-variables)
+    * [Shadowing](#shadowing)
+    * [Data types](#data-types)
+        * [Integer overflow](#integer-overflow)
+        * [String and `char` literals](#string-and-char-literals)
+    * [Tuples and arrays](#tuples-and-arrays)
+    * [Statments and expressions](#statments-and-expressions)
+* [Chapter 4. Ownership](#chapter-4-ownership)
+    * [Stack versus heap](#stack-versus-heap)
+        * [The stack](#the-stack)
+        * [The heap](#the-heap)
+        * [The stack is faster than the heap](#the-stack-is-faster-than-the-heap)
+    * [Scope](#scope)
+        * [The basics](#the-basics)
+    * [References and borrowing](#references-and-borrowing)
+    * [Slices](#slices)
+* [Chapter 5. Structs](#chapter-5-structs)
+    * [Using the `DisplayAd` struct](#using-the-displayad-struct)
+    * [Instantiating another one](#instantiating-another-one)
+    * [Structs without field names](#structs-without-field-names)
+    * [Methods inside of structs](#methods-inside-of-structs)
+* [Chapter 6. Enums and `match`](#chapter-6-enums-and-match)
+
+<!-- vim-markdown-toc -->
 
 My journey learning the Rust programming language. Examples are probably not my own, but might be.
 
