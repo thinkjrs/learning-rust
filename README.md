@@ -40,6 +40,9 @@
     * [Structs without field names](#structs-without-field-names)
     * [Methods inside of structs](#methods-inside-of-structs)
 * [Chapter 6. Enums and `match`](#chapter-6-enums-and-match)
+    * [Modeling an Ad system](#modeling-an-ad-system)
+    * [Using the `Ad` struct](#using-the-ad-struct)
+    * [`Option<T>`](#optiont)
 
 <!-- vim-markdown-toc -->
 
@@ -701,3 +704,149 @@ fn main {
 We call these _associated functions_ in the Rust language. It's common for a struct to implement a `new` function that creates the struct. All the usual borrowing/ownership rules apply.
 
 ## Chapter 6. Enums and `match`
+
+In covering enums we'll stick with our ads modeling from above. So what's an enum, you ask? 
+
+An enum (short for enumeration) in Rust allows you to define a type by enumerating its possible values. Each of these possible values is known as a variant. Variants of an enum can carry data (_similar_ to fields in a struct) and can have different types and amounts of associated data.
+
+Basically, use enums when you want to model the context of your data and can enumerate it. Then use structs to actually hold that data.
+
+### Modeling an Ad system
+
+Revisiting our `DisplayAd` struct from above, the `Ad` enum below shows how we might use it and other structs.
+
+```rust 
+enum Ad {
+    Display(DisplayAd),
+    Hover(HoverAd),
+    Feed(FeedAd),
+    Video(VideoAd),
+    InlineText(InlineTextAd),
+}
+```
+
+Here we've added other `*Ad` structs and enumerated them inside an enum. So we can use the `Ad` enum and reason about _what kind of ad_ we're dealing with, having the data separate from the actual reasoning mechanism itself.
+
+_Note: you don't have to use structs to store data inside an enum._ You can store it directly. Here's what that looks like:
+
+```rust
+enum Fruit {
+    Apple(String),
+    Grapes(String),
+}
+fn main {
+    let washington_apple = Fruit::Apple(String::from("Washington"));
+    let green_grapes = Fruit::Grapes(String::from("Green"));
+    let red_grapes = Fruit::Grapes(String::from("Red"));
+}
+```
+
+### Using the `Ad` struct
+
+Back on our struct to model types of Ads, one advantage is that we can write methods, like with structs, but that operate on all the different types of ads.
+
+And inside those methods we can use an extremely powerful control flow in Rust called `match`, which allows you to execute code based on pattern matches, made up:
+
+- Literals
+- Destructured arrays, enums, structs, or tuples
+- Variables
+- Wildcards
+- Placeholders
+
+This is directly from the [Rust book section](https://doc.rust-lang.org/book/ch18-00-patterns.html#patterns-and-matching). 
+
+So let's use methods with `match` to do some setup for our `Ad`s. 
+
+```rust
+impl Ad {
+    fn init(&self) {
+        match self {
+            Ad::Display(ad) => {
+                println!("initializing: {:#?}", ad);
+                send_notification(&ad.title)
+            }
+            Ad::Hover(ad) => {
+                println!("initializing: {:#?}", ad);
+                send_notification(&ad.title)
+            }
+            Ad::Feed(ad) => {
+                println!("initializing: {:#?}", ad);
+                send_notification(&ad.title)
+            }
+            Ad::Video(ad) => {
+                println!("initializing: {:#?}", ad);
+                send_notification(&ad.title)
+            }
+            Ad::InlineText(ad) => {
+                println!("initializing: {:#?}", ad);
+                send_notification(&ad.title)
+            }
+        }
+    }
+}
+
+fn main {
+    let start_timestamp: i64 = chrono::Utc::now().timestamp();
+    let my_display_ad = Ad::Display(DisplayAd {
+        start_timestamp,
+        budget: 5000,
+        title: String::from("My first ad"),
+        copy: String::from("Buy whatever I'm selling. It's great!"),
+        call_to_action: String::from("On sale today only!"),
+        button_text: String::from("Buy now"),
+        target_url: String::from("https://tincre.com/agency"),
+        media_asset_urls: vec![String::from("https://https://res.cloudinary.com/tincre/video/upload/v1708121578/nfpwzh1oslr8qhdyotzs.mov")],
+    });
+    my_display_ad.init();
+
+    // and another ad 
+    let my_text_ad = Ad::InlineText(InlineTextAd {
+        start_timestamp,
+        budget: 5000,
+        title: String::from("My first ad"),
+        copy: String::from("Buy whatever I'm selling. It's great!"),
+        call_to_action: String::from("On sale today only!"),
+        target_url: String::from("https://tincre.com/agency"),
+    });
+    my_text_ad.init();
+}
+```
+
+We created an `init` method on the `Ad` enum type that `match`es the corresponding ad struct that actually holds our data. Now we have two ads ready to rock and initialized custom to the kind of ad each represents.
+
+### `Option<T>`
+
+Rust has a built-in enum called `Option<T>` to represent the presence or absence of value. It is designed to avoid null references, a common source of errors in other programming languages. It has two variants: `Some(T)`, indicating the presence of a value of type `T`, and `None`, indicating the absence of a value.
+
+Along with control flow like `match` this can be very useful. For example,
+
+```rust
+fn did_eat_fruit(fruit: Option<&str>) -> bool {
+    match fruit {
+        None => false,
+        _ => true,
+    }
+}
+
+fn main() {
+    let apple = Some("Apple");
+    let banana = None;
+    let monkey_eating_status = if did_eat_fruit(apple) {
+        "ate"
+    } else {
+        "did not eat"
+    };
+    println!("The monkey {monkey_eating_status}.");
+
+    let monkey_eating_status = if did_eat_fruit(banana) {
+        "ate"
+    } else {
+        "did not eat"
+    };
+    println!("The monkey {monkey_eating_status}.");
+}
+```
+
+If we didn't handle the `None` case in the function the compiler would have screamed at us before we compiled and caused a runtime bug. This is a fantastic safety feature of Rust. It forces the developer to handle the type explicitly, always.
+
+
