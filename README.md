@@ -43,6 +43,14 @@
     * [Modeling an Ad system](#modeling-an-ad-system)
     * [Using the `Ad` struct](#using-the-ad-struct)
     * [`Option<T>`](#optiont)
+* [Chapter 7. Crates, packages and modules](#chapter-7-crates-packages-and-modules)
+    * [Crates](#crates)
+        * [Binary crates](#binary-crates)
+        * [Library crates](#library-crates)
+* [Chapter 8. Vectors, Strings and Hash Map Collections](#chapter-8-vectors-strings-and-hash-map-collections)
+    * [Vectors](#vectors)
+    * [Strings](#strings)
+    * [Hash Maps](#hash-maps)
 
 <!-- vim-markdown-toc -->
 
@@ -849,4 +857,43 @@ fn main() {
 
 If we didn't handle the `None` case in the function the compiler would have screamed at us before we compiled and caused a runtime bug. This is a fantastic safety feature of Rust. It forces the developer to handle the type explicitly, always.
 
+## Chapter 7. Crates, packages and modules
 
+Aside from a cursory review and demonstration here, we'll dive into these concepts in more depth with an actual project, later.
+
+In a nutshell, Rust's _module system_ consists of (these are directly from [the docs](https://doc.rust-lang.org/book/ch07-00-managing-growing-projects-with-packages-crates-and-modules.html)):
+
+- Packages: A Cargo feature that lets you build, test, and share crates
+- Crates: A tree of modules that produces a library or executable
+- Modules and use: Let you control the organization, scope, and privacy of paths
+- Paths: A way of naming an item, such as a struct, function, or module
+
+### Crates
+
+The smallest compiled piece of code Rust can consider is called a _crate_, which can contain modules, which can be defined in other files or places in the codebase that get compiled with the crate.
+
+There are two types of crates, _binary_ and _library_ crates. A package can, and often does, have both.
+
+#### Binary crates 
+
+A binary crate has a `main` function that you can use to actually run an executable, typically located inside `<my-project-name>/src/main.rs`. 
+
+You create a package using a binary crate via the cargo `new` command, e.g. `cargo new <my-project-name>`. 
+
+#### Library crates
+
+Library crates define functionality to be used elsewhere. Often these are published to crates.io to be shared publicly. 
+
+You create a package with a library crate using the `--lib` flag with Cargo's `new` command, e.g. `cargo new <my-project-name> --lib`. 
+
+This creates a file under `<my-project-name>/src/lib.rs`. 
+
+## Chapter 8. Vectors, Strings and Hash Map Collections
+
+The Rust standard library has a number of collections available for use, data structures that store data on the heap and can be grown or shrunk during runtime.
+
+### Vectors
+
+### Strings
+
+### Hash Maps
