@@ -552,3 +552,109 @@ fn first_word(s: &str) -> &str {
     &s[..]
 }
 ```
+
+## Chapter 5. Structs
+
+Structs hold related attribute data where the attributes have names, similar to tuples but named, so that it's clear what the value(s) of each attribute means.
+
+Here's what a struct looks like:
+
+```rust
+#[derive(Debug)] // this is for printing using "{:?}" or "{:#?}"
+struct DisplayAd {
+    start_timestamp: i64,
+    budget: u32,
+    title: String,
+    copy: String,
+    call_to_action: String,
+    media_asset_urls: Vec<String>,
+    button_text: String,
+    target_url: String,
+}
+```
+
+### Using the `DisplayAd` struct
+
+The `DisplayAd` struct above can be used like the below.
+
+```rust
+use chrono;
+
+fn main() {
+    let start_timestamp: i64 = chrono::Utc::now().timestamp();
+    let mut my_ad = DisplayAd {
+        start_timestamp,
+        budget: 5000,
+        title: String::from("My first ad"),
+        copy: String::from("Buy whatever I'm selling. It's great!"),
+        call_to_action: String::from("On sale today only!"),
+        button_text: String::from("Buy now"),
+        target_url: String::from("https://tincre.com/agency"),
+        media_asset_urls: vec![String::from("https://https://res.cloudinary.com/tincre/video/upload/v1708121578/nfpwzh1oslr8qhdyotzs.mov")],
+    }
+}
+```
+
+There are a few things happening in the above. First of all, the usage of mutability `mut` is arbitrary and not required. Secondly, we're using [_field init shorthand_](https://rust-book.cs.brown.edu/ch05-01-defining-structs.html#using-the-field-init-shorthand) syntax to list the parameter/field name `start_timestamp`.
+
+> We can only use _field init shorthand_ when the variable name and the struct field name are exactly the same.
+
+### Instantiating another one
+
+We can use some more shorthand syntax for instantiating another `DisplayAd`, which has some quirks we'll cover.
+
+```rust
+    let mut my_ad2 = DisplayAd {
+        start_timestamp,
+        budget: 1250,
+        title: my_ad.title,
+        call_to_action: my_ad.call_to_action,
+        button_text: String::from("Don't use it"),
+        target_url: String::from("https://truthsocial.com"),
+        ..my_ad // no comma after this
+    }
+```
+
+Now firstly, notice that we used `my_ad.title`, the `title` field from the first `my_ad` `DisplayAd` instantiation. Importantly, when we do this, the ownership for `my_ad.title` is moved to `my_ad2.title`. That means you can't use `my_ad` anymore!
+
+Secondly, at the very end we use _struct update syntax_ to add the remaining items from `my_ad` that we didn't specify. This must come last and cannot have a trailing comma.
+
+### Structs without field names
+
+We can also instantiate structs without field names. For example,
+
+```rust
+struct Coordinates(f64, f64);
+
+fn main() {
+    let location = Coordinates(19.3937, 99.1746);
+}
+```
+
+These can be useful if you want a tuple that comes with all the other goodies of structs.
+
+### Methods inside of structs
+
+One of the goodies that structs provide is the ability to place a method expression inside of them, just like a function but only within the context of the struct definition.
+
+> This is available for traits and enums, too.
+
+This can help massively with readability. Here's an example, assuming our `DisplayAd` struct from above.
+
+```rust
+const AVG_CPM: f64 = 3.2;
+
+impl DisplayAd {
+    fn calculate_estimated_impressions(&self) -> f64 {
+        (self.budget as f64 / AVG_CPM) * 1000
+    }
+}
+
+fn main {
+    println!("{my_ad2.calculate_estimated_impressions()} impressions are expected for spend of {my_ad2.budget} USD")
+}
+```
+
+We call these _associated functions_ in the Rust language. It's common for a struct to implement a `new` function that creates the struct. All the usual borrowing/ownership rules apply.
+
+## Chapter 6. Enums and `match`
