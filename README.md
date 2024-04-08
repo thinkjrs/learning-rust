@@ -894,6 +894,84 @@ The Rust standard library has a number of collections available for use, data st
 
 ### Vectors
 
+Vectors are datastructures that store multiple values next to each other in memory. You should use them when you have a list of things to store. 
+
+Below are some snippets demonstrating how to use them.
+
+```rust
+// create and push to the vector
+let mut my_vec: Vec<u8> = Vec::new();
+my_vec.push(0);
+my_vec.push(1);
+my_vec.push(1);
+my_vec.push(0);
+
+println!("{:?}", my_vec);
+```
+
+Use the convenience macro:
+
+```rust
+let my_vec2: Vec<u8> = vec![0, 1, 1, 0];
+```
+
+Vectors can also take types stored in enums. 
+```rust
+#[derive(Debug)]
+pub struct TextAd {
+    ad_text: String,
+    budget: u32,
+    target_url: String,
+}
+#[derive(Debug)]
+pub struct VideoAd {
+    ad_title: String,
+    budget: u32,
+    target_url: String,
+}
+
+impl TextAd {
+    pub fn new(ad_text: String, budget: u32, target_url: String) -> TextAd {
+        TextAd {
+            ad_text,
+            budget,
+            target_url,
+        }
+    }
+}
+
+impl VideoAd {
+    pub fn new(ad_title: String, budget: u32, target_url: String) -> VideoAd {
+        VideoAd {
+            ad_title,
+            budget,
+            target_url,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum Ad {
+    Text(TextAd),
+    Video(VideoAd),
+}
+fn main() {
+    let mut ads = vec![
+        Ad::Video(VideoAd::new(
+            String::from("Test video title"),
+            1000,
+            String::from("https://tincre.com"),
+        )),
+        Ad::Text(TextAd::new(
+            String::from("Test text"),
+            1250,
+            String::from("https://tincre.com/agency"),
+        )),
+    ];
+    
+    println!("{:?}", ads);
+}
+```
 ### Strings
 
 ### Hash Maps
