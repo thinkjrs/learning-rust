@@ -1,4 +1,5 @@
 # learning-rust
+
 <!-- vim-markdown-toc GFM -->
 
 * [Chapter 1. Getting Started](#chapter-1-getting-started)
@@ -713,7 +714,7 @@ We call these _associated functions_ in the Rust language. It's common for a str
 
 ## Chapter 6. Enums and `match`
 
-In covering enums we'll stick with our ads modeling from above. So what's an enum, you ask? 
+In covering enums we'll stick with our ads modeling from above. So what's an enum, you ask?
 
 An enum (short for enumeration) in Rust allows you to define a type by enumerating its possible values. Each of these possible values is known as a variant. Variants of an enum can carry data (_similar_ to fields in a struct) and can have different types and amounts of associated data.
 
@@ -723,7 +724,7 @@ Basically, use enums when you want to model the context of your data and can enu
 
 Revisiting our `DisplayAd` struct from above, the `Ad` enum below shows how we might use it and other structs.
 
-```rust 
+```rust
 enum Ad {
     Display(DisplayAd),
     Hover(HoverAd),
@@ -761,9 +762,9 @@ And inside those methods we can use an extremely powerful control flow in Rust c
 - Wildcards
 - Placeholders
 
-This is directly from the [Rust book section](https://doc.rust-lang.org/book/ch18-00-patterns.html#patterns-and-matching). 
+This is directly from the [Rust book section](https://doc.rust-lang.org/book/ch18-00-patterns.html#patterns-and-matching).
 
-So let's use methods with `match` to do some setup for our `Ad`s. 
+So let's use methods with `match` to do some setup for our `Ad`s.
 
 ```rust
 impl Ad {
@@ -807,7 +808,7 @@ fn main {
     });
     my_display_ad.init();
 
-    // and another ad 
+    // and another ad
     let my_text_ad = Ad::InlineText(InlineTextAd {
         start_timestamp,
         budget: 5000,
@@ -874,19 +875,19 @@ The smallest compiled piece of code Rust can consider is called a _crate_, which
 
 There are two types of crates, _binary_ and _library_ crates. A package can, and often does, have both.
 
-#### Binary crates 
+#### Binary crates
 
-A binary crate has a `main` function that you can use to actually run an executable, typically located inside `<my-project-name>/src/main.rs`. 
+A binary crate has a `main` function that you can use to actually run an executable, typically located inside `<my-project-name>/src/main.rs`.
 
-You create a package using a binary crate via the cargo `new` command, e.g. `cargo new <my-project-name>`. 
+You create a package using a binary crate via the cargo `new` command, e.g. `cargo new <my-project-name>`.
 
 #### Library crates
 
-Library crates define functionality to be used elsewhere. Often these are published to crates.io to be shared publicly. 
+Library crates define functionality to be used elsewhere. Often these are published to crates.io to be shared publicly.
 
-You create a package with a library crate using the `--lib` flag with Cargo's `new` command, e.g. `cargo new <my-project-name> --lib`. 
+You create a package with a library crate using the `--lib` flag with Cargo's `new` command, e.g. `cargo new <my-project-name> --lib`.
 
-This creates a file under `<my-project-name>/src/lib.rs`. 
+This creates a file under `<my-project-name>/src/lib.rs`.
 
 ## Chapter 8. Vectors, Strings and Hash Map Collections
 
@@ -894,7 +895,7 @@ The Rust standard library has a number of collections available for use, data st
 
 ### Vectors
 
-Vectors are datastructures that store multiple values next to each other in memory. You should use them when you have a list of things to store. 
+Vectors are datastructures that store multiple values next to each other in memory. You should use them when you have a list of things to store.
 
 Below are some snippets demonstrating how to use them.
 
@@ -915,7 +916,8 @@ Use the convenience macro:
 let my_vec2: Vec<u8> = vec![0, 1, 1, 0];
 ```
 
-Vectors can also take types stored in enums. 
+Vectors can also take types stored in enums.
+
 ```rust
 #[derive(Debug)]
 pub struct TextAd {
@@ -968,10 +970,85 @@ fn main() {
             String::from("https://tincre.com/agency"),
         )),
     ];
-    
+
     println!("{:?}", ads);
 }
 ```
+
 ### Strings
+
+Strings in Rust may seem strange to those coming from dynamic languages such as Python or JavaScript. If coming from C-family languages, the way Rust treats strings may seem refreshing, as C-family developers consistently deal with the complexities a "string" presents.
+
+Rust has the primitive [`char`](https://doc.rust-lang.org/std/primitive.char.html) type which is defined to represent a [Unicode scalar value](https://www.unicode.org/glossary/#unicode_scalar_value). It is always 4 bytes long and its syntax is represented by two enclosed single quotes `'`, e.g. `'c'`.
+
+However, the `char` type _is not_ how strings are represented in Rust; a String is better thought of as a vector, in fact, a `vec<u8>` with some extras and restrictions.
+
+You can create a string using the familiar `::new` or the string-specific `::from` functions, if you'd like to create your string from a string literal directly.
+
+```rust
+fn main() {
+    let mut s1 = String::new();
+    s1.push_str("Hello, ");
+    let s2 = String::from("world!");
+}
+```
+
+> String literals also have a `to_string()` method developers can use to return a String.
+
+Similarly to `Vec<T>` a String can have modifiable sizes and contents. It's important to remember that borrow and move operations apply here. The example below demonstrates this, asuming our `s1 and s2` variables from directly above.
+
+```rust
+fn main() {
+    let s3 = s1 + &s2; // note s1 has been moved and is no longer be usable
+    println!("{}", s3);
+    //println!("{}", s1);
+}
+```
+
+If you uncomment the //println! in your editor you'll see something like the screenshot below.
+
+![s1 cannot be used since it was moved to s3](https://res.cloudinary.com/thinkjrs-dev/image/upload/v1712611681/learning-rust/Screenshot_from_2024-04-08_15-25-00_apvinn_zqghlj.webp).
+
+```rust
+fn main() {
+    let mut s = format!("{s3} You are crazy, {s2}");
+    let not_owned = "blah";
+    s.push_str(not_owned);
+    println!("Pushed: {}", s);
+    println!("This isn't owned: {}", not_owned);
+}
+```
+
+You can also slice a string to get particular _bytes_:
+
+```rust
+fn main() {
+    let slice_entire = &s3[..];
+
+    // Borrow a reference to part of the String
+    let slice_part = &s3[0..5];
+
+    println!("Entire slice: {}", slice_entire); // Prints "Hello, world!"
+    println!("Part of slice: {}", slice_part); // Prints "Hello"
+}
+```
+
+> Be very careful using ranges to index strings because these can become out of bounds.
+
+In particular with regard to slicing, you can't index a String in Rust.
+
+If you want to operate on pieces of String collections you should use iterators, of which there are two `chars` and `bytes`.
+
+```rust
+fn main() {
+    for c in not_owned.chars() {
+        println!("Character: {}", c);
+    }
+
+    for b in not_owned.bytes() {
+        println!("Bytes: {}", b);
+    }
+}
+```
 
 ### Hash Maps
