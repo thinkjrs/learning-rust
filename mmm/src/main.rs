@@ -1,4 +1,4 @@
-fn median(mut vector: Vec<i32>) {
+fn median(vector: &mut Vec<i32>) {
     match vector.len() {
         0 => println!("Median: NaN"),
         _other => {
@@ -23,23 +23,44 @@ fn median(mut vector: Vec<i32>) {
         }
     }
 }
+
+fn mode(vector: &Vec<i32>) {
+    use std::collections::HashMap;
+    let mut counter: HashMap<&i32, i32> = HashMap::new();
+    for val in vector {
+        let count = counter.entry(val).or_insert(0);
+        *count += 1;
+    }
+
+    let mut max_val: i32 = 0;
+    let mut max_key: i32 = 0;
+    for (key, val) in counter.iter() {
+        if val > &max_val {
+            max_key = **key;
+            max_val = *val;
+        }
+    }
+    println!("{:?}", counter);
+    println!("Mode: {}", max_key);
+}
 fn main() {
     let mut rates: Vec<i32> = vec![0, 1, 0, 12, 3, 49, 28];
     println!("Calculating median, mode and means for {:?}", rates);
     // find median
-    median(rates);
+    median(&mut rates);
     // find mode
 
+    mode(&mut rates);
     // find arithmetic mean
 
     // find geometric mean
 
-    rates = vec![0, 1, 12, 5, 49, 28];
+    rates = vec![0, 1, 5, 5, 49, 28];
     println!("Calculating median, mode and means for {:?}", rates);
-    median(rates);
+    median(&mut rates);
 
     // find mode
-
+    mode(&mut rates);
     // find arithmetic mean
 
     // find geometric mean
