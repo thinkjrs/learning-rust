@@ -52,6 +52,13 @@
     * [Vectors](#vectors)
     * [Strings](#strings)
     * [Hash Maps](#hash-maps)
+        * [Create your first `HashMap`](#create-your-first-hashmap)
+        * [Insert some tickers and prices](#insert-some-tickers-and-prices)
+        * [Get the price of GILD](#get-the-price-of-gild)
+        * [Update values](#update-values)
+            * [Overwrite](#overwrite)
+            * [Upsert](#upsert)
+            * [Update](#update)
     * [Collections Projects](#collections-projects)
         * [Median, mode, mean](#median-mode-mean)
         * [Pig latin strings](#pig-latin-strings)
@@ -1057,6 +1064,97 @@ fn main() {
 
 ### Hash Maps
 
+Key-value storage in Rust is typically accomplished with the `HashMap` standard libary collection. Different from `Vector`s and `String`s you need to first `use` the collection.
+
+For example,
+
+```rust
+use std::collections::HashMap;
+```
+
+Specifically, `HashMap<K, V>` maps keys (of type `K`) to values (type `V`) using the DoS-proof hashing function _SipHash_, created in 2012 after a slew of attacks on hash tables.
+
+#### Create your first `HashMap`
+
+We create hash maps via the standard `::new` constructor.
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let mut prices = HashMap::new();
+}
+```
+
+#### Insert some tickers and prices
+
+Let's insert some stock ticker symbols and fake prices. 
+
+```rust
+fn main() {
+    let stock_ticker_1 = "AAPL";
+
+    prices.insert(stock_ticker_1, 163.23);
+
+    prices.insert(stock_ticker_1, 163.23);
+
+    prices.insert("GILD", 66.76);
+}
+```
+> These are real tickers for Apple (AAPL) and Gilead Sciences (GILD).
+#### Get the price of GILD
+
+Now let's extract those values and do something with them, like print to the console.
+
+```rust
+fn main() {
+    let ticker_symbol = "GILD";
+
+    let gild_price = prices.get(&ticker_symbol).copied().unwrap_or(0.0);
+
+    println!("{}: {}", ticker_symbol, gild_price);
+}
+```
+#### Update values
+
+When you update values in a Rust `HashMap` you need to choose what you want to happen. 
+
+You can choose to overwrite the value, insert a standard value or do nothing if there's something there already, or modify the value present in some way.
+
+##### Overwrite
+
+Overwriting values is simple. The hash map simply takes the last value given, in the "overwriting" case.
+
+```rust
+fn main() {
+    prices.insert("GILD", 66.77);
+}
+```
+##### Upsert
+
+A common pattern is to insert a default value _only when_ a value is not present, otherwise leaving the current value alone.
+
+For our ticker case, imagine that there's a vector of enums that hold a string timestamp and a `HashMap` of our tickers plus the price. This might be a nice way to organize data from various exchanges available.
+
+In this case if we want, we can set a default value for the price, e.g. 0.
+
+> Note setting default 0s would be terrible practice in actual financial engineering applications! 
+
+```rust
+fn main() {
+    prices.entry("AAPL").or_insert(0.0);
+}
+```
+##### Update
+
+Now let's add a penny to a price.
+
+```rust
+fn main() {
+    let appl_price = prices.entry("AAPL").or_insert(0.0);
+    *aapl_price += 0.01;
+}
+```
 ### Collections Projects
 
 The Rust book provides three suggested projects since collections have been reviewed, as these tools allow developers to make much more complex programs.
@@ -1066,10 +1164,11 @@ The Rust book provides three suggested projects since collections have been revi
 
 - We'll also include the mean here, both arithmetic and geometric.
 
-#### Pig latin strings 
+#### Pig latin strings
 - Convert strings to pig latin. The first consonant of each word is moved to the end of the word and “ay” is added, so “first” becomes “irst-fay.” Words that start with a vowel have “hay” added to the end instead (“apple” becomes “apple-hay”). Keep in mind the details about UTF-8 encoding!
 
 #### Stocks to a portfolio
 - Using a hash map and vectors, create a text interface to allow a user to add ticker symbols to a portfolio in a fund. For example, “Add AAPL to Alpha Fund I” or “Add GILD to Global Value Fund II.” Then let the user retrieve a list of all tickers in a portfolio or all tickers in the fund by portfolio name, sorted alphabetically.
 
 > I edited the original project suggestion to be about stocks in portfolios in a fund, rather than employees in a department in a company.
+````
