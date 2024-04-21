@@ -52,6 +52,10 @@
     * [Vectors](#vectors)
     * [Strings](#strings)
     * [Hash Maps](#hash-maps)
+    * [Collections Projects](#collections-projects)
+        * [Median, mode, mean](#median-mode-mean)
+        * [Pig latin strings](#pig-latin-strings)
+        * [Stocks to a portfolio](#stocks-to-a-portfolio)
 
 <!-- vim-markdown-toc -->
 
@@ -1052,3 +1056,20 @@ fn main() {
 ```
 
 ### Hash Maps
+
+### Collections Projects
+
+The Rust book provides three suggested projects since collections have been reviewed, as these tools allow developers to make much more complex programs.
+
+#### Median, mode, mean
+- Given a list of integers, use a vector and return the median (when sorted, the value in the middle position) and mode (the value that occurs most often; a hash map will be helpful here) of the list.
+
+- We'll also include the mean here, both arithmetic and geometric.
+
+#### Pig latin strings 
+- Convert strings to pig latin. The first consonant of each word is moved to the end of the word and “ay” is added, so “first” becomes “irst-fay.” Words that start with a vowel have “hay” added to the end instead (“apple” becomes “apple-hay”). Keep in mind the details about UTF-8 encoding!
+
+#### Stocks to a portfolio
+- Using a hash map and vectors, create a text interface to allow a user to add ticker symbols to a portfolio in a fund. For example, “Add AAPL to Alpha Fund I” or “Add GILD to Global Value Fund II.” Then let the user retrieve a list of all tickers in a portfolio or all tickers in the fund by portfolio name, sorted alphabetically.
+
+> I edited the original project suggestion to be about stocks in portfolios in a fund, rather than employees in a department in a company.
