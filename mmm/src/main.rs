@@ -49,8 +49,12 @@ fn arithmetic_mean(vector: &Vec<i32>) {
     for val in vector {
         sum += *val as usize;
     }
-    println!("Arithmetic Average: {:.2}", sum as f64 / vector.len() as f64);
+    println!(
+        "Arithmetic Average: {:.2}",
+        sum as f64 / vector.len() as f64
+    );
 }
+
 fn main() {
     let mut rates: Vec<i32> = vec![0, 1, 0, 12, 3, 49, 28];
     println!("Calculating median, mode and means for {:?}", rates);
@@ -62,8 +66,6 @@ fn main() {
     // find arithmetic mean
     arithmetic_mean(&mut rates);
 
-    // find geometric mean
-
     rates = vec![0, 1, 5, 5, 49, 28];
     println!("Calculating median, mode and means for {:?}", rates);
     median(&mut rates);
@@ -72,5 +74,13 @@ fn main() {
     mode(&mut rates);
     // find arithmetic mean
     arithmetic_mean(&mut rates);
-    // find geometric mean
+
+    rates = vec![20, 0, 1, 5, 49, 28];
+    println!("Calculating median, mode and means for {:?}", rates);
+    median(&mut rates);
+
+    // find mode
+    mode(&mut rates);
+    // find arithmetic mean
+    arithmetic_mean(&mut rates);
 }
