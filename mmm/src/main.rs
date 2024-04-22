@@ -15,8 +15,8 @@ fn median(vector: &mut Vec<i32>) {
                     let middle_upper_index = vector.len() / 2;
                     let middle_lower_index = &middle_upper_index - 1;
                     let median_value =
-                        (&vector[middle_lower_index] + &vector[middle_upper_index]) / 2;
-                    println!("Median: {}.5", median_value)
+                        (&vector[middle_lower_index] + &vector[middle_upper_index]) as f64 / 2.0;
+                    println!("Median: {}", median_value)
                 }
                 _ => {}
             }
