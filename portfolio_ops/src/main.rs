@@ -36,10 +36,8 @@ fn add_to_portfolio(
         }
     }
 }
-// TODO implement listing a portfolio's tickers
 fn list_portfolio_tickers(portfolio_name: String, portfolios: &mut HashMap<String, Vec<String>>) {
-    let tickers = portfolios.get(&portfolio_name);
-    if let Some(portfolio_tickers) = tickers {
+    if let Some(portfolio_tickers) = portfolios.get(&portfolio_name) {
         println!("Tickers for {}: {:?}", portfolio_name, portfolio_tickers);
     }
 }
