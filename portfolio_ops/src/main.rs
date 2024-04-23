@@ -6,7 +6,6 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
-// TODO implement adding a stock to a portfolio
 fn add_to_portfolio(
     ticker: String,
     portfolio_name: String,
@@ -28,13 +27,22 @@ fn add_to_portfolio(
                     e.get_mut().push(ticker);
                 }
                 true => {
-                    println!("Ticker {} already in portfolio so stop trying to add it.", &ticker);
+                    println!(
+                        "Ticker {} already in portfolio so stop trying to add it.",
+                        &ticker
+                    );
                 }
             }
         }
     }
 }
 // TODO implement listing a portfolio's tickers
+fn list_portfolio_tickers(portfolio_name: String, portfolios: &mut HashMap<String, Vec<String>>) {
+    let tickers = portfolios.get(&portfolio_name);
+    if let Some(portfolio_tickers) = tickers {
+        println!("Tickers for {}: {:?}", portfolio_name, portfolio_tickers);
+    }
+}
 // TODO implement listing all tickers in the fund by portfolio name
 fn main() {
     let mut portfolios: HashMap<String, Vec<String>> = HashMap::new();
@@ -65,4 +73,7 @@ fn main() {
     );
     println!("{:?}", portfolios);
 
+    list_portfolio_tickers(String::from("Money-losing Growth"), &mut portfolios);
+
+    list_portfolio_tickers(String::from("Bland Growth"), &mut portfolios);
 }
