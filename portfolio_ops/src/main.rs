@@ -3,47 +3,13 @@
 // Alpha Fund I” or “Add GILD to Global Value Fund II.”
 // Then let the user retrieve a list of all tickers in a portfolio or all
 // tickers in the fund by portfolio name, sorted alphabetically.
-use std::collections::hash_map::Entry;
+use crate::portfolio_operations::add_to_portfolio;
+use crate::portfolio_operations::list_all_portfolios;
+use crate::portfolio_operations::list_portfolio_tickers;
 use std::collections::HashMap;
 
-fn add_to_portfolio(
-    ticker: String,
-    portfolio_name: String,
-    portfolios: &mut HashMap<String, Vec<String>>,
-) {
-    match portfolios.entry(portfolio_name) {
-        Entry::Vacant(e) => {
-            e.insert(vec![ticker]);
-        }
-        Entry::Occupied(mut e) => {
-            let mut contains_ticker: bool = false;
-            for portfolio_ticker in e.get() {
-                if portfolio_ticker == &ticker {
-                    contains_ticker = true;
-                }
-            }
-            match contains_ticker {
-                false => {
-                    e.get_mut().push(ticker);
-                }
-                true => {
-                    println!(
-                        "Ticker {} already in portfolio so stop trying to add it.",
-                        &ticker
-                    );
-                }
-            }
-        }
-    }
-}
-fn list_portfolio_tickers(portfolio_name: String, portfolios: &mut HashMap<String, Vec<String>>) {
-    if let Some(portfolio_tickers) = portfolios.get(&portfolio_name) {
-        println!("Tickers for {}: {:?}", portfolio_name, portfolio_tickers);
-    }
-}
-fn list_all_portfolios(portfolios: &mut HashMap<String, Vec<String>>) {
-    println!("All fund portfolios and holdings: {:?}", portfolios);
-}
+pub mod portfolio_operations;
+
 fn main() {
     let mut portfolios: HashMap<String, Vec<String>> = HashMap::new();
     println!("{:?}", portfolios);
