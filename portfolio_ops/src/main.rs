@@ -41,7 +41,9 @@ fn list_portfolio_tickers(portfolio_name: String, portfolios: &mut HashMap<Strin
         println!("Tickers for {}: {:?}", portfolio_name, portfolio_tickers);
     }
 }
-// TODO implement listing all tickers in the fund by portfolio name
+fn list_all_portfolios(portfolios: &mut HashMap<String, Vec<String>>) {
+    println!("All fund portfolios and holdings: {:?}", portfolios);
+}
 fn main() {
     let mut portfolios: HashMap<String, Vec<String>> = HashMap::new();
     println!("{:?}", portfolios);
@@ -74,4 +76,6 @@ fn main() {
     list_portfolio_tickers(String::from("Money-losing Growth"), &mut portfolios);
 
     list_portfolio_tickers(String::from("Bland Growth"), &mut portfolios);
+
+    list_all_portfolios(&mut portfolios);
 }
