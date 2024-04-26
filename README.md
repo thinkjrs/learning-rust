@@ -63,6 +63,14 @@
         * [Median, mode, mean](#median-mode-mean)
         * [Pig latin strings](#pig-latin-strings)
         * [Stocks to a portfolio](#stocks-to-a-portfolio)
+* [Chapter 9. Errors](#chapter-9-errors)
+    * [`panic!` Unrecoverable errors](#panic-unrecoverable-errors)
+        * [Crashing programs for fun](#crashing-programs-for-fun)
+    * [Recoverable errors](#recoverable-errors)
+        * [Matching recoverability](#matching-recoverability)
+        * [The `?` operator](#the--operator)
+        * [Thinking about recoverable versus nonrecoverable](#thinking-about-recoverable-versus-nonrecoverable)
+        * [Custom types](#custom-types)
 
 <!-- vim-markdown-toc -->
 
@@ -1088,7 +1096,7 @@ fn main() {
 
 #### Insert some tickers and prices
 
-Let's insert some stock ticker symbols and fake prices. 
+Let's insert some stock ticker symbols and fake prices.
 
 ```rust
 fn main() {
@@ -1101,7 +1109,9 @@ fn main() {
     prices.insert("GILD", 66.76);
 }
 ```
+
 > These are real tickers for Apple (AAPL) and Gilead Sciences (GILD).
+
 #### Get the price of GILD
 
 Now let's extract those values and do something with them, like print to the console.
@@ -1115,9 +1125,10 @@ fn main() {
     println!("{}: {}", ticker_symbol, gild_price);
 }
 ```
+
 #### Update values
 
-When you update values in a Rust `HashMap` you need to choose what you want to happen. 
+When you update values in a Rust `HashMap` you need to choose what you want to happen.
 
 You can choose to overwrite the value, insert a standard value or do nothing if there's something there already, or modify the value present in some way.
 
@@ -1130,6 +1141,7 @@ fn main() {
     prices.insert("GILD", 66.77);
 }
 ```
+
 ##### Upsert
 
 A common pattern is to insert a default value _only when_ a value is not present, otherwise leaving the current value alone.
@@ -1138,13 +1150,14 @@ For our ticker case, imagine that there's a vector of enums that hold a string t
 
 In this case if we want, we can set a default value for the price, e.g. 0.
 
-> Note setting default 0s would be terrible practice in actual financial engineering applications! 
+> Note setting default 0s would be terrible practice in actual financial engineering applications!
 
 ```rust
 fn main() {
     prices.entry("AAPL").or_insert(0.0);
 }
 ```
+
 ##### Update
 
 Now let's add a penny to a price.
@@ -1155,20 +1168,340 @@ fn main() {
     *aapl_price += 0.01;
 }
 ```
+
 ### Collections Projects
 
 The Rust book provides three suggested projects since collections have been reviewed, as these tools allow developers to make much more complex programs.
 
 #### Median, mode, mean
+
 - Given a list of integers, use a vector and return the median (when sorted, the value in the middle position) and mode (the value that occurs most often; a hash map will be helpful here) of the list.
 
 - We'll also include the mean here, both arithmetic and geometric.
 
 #### Pig latin strings
+
 - Convert strings to pig latin. The first consonant of each word is moved to the end of the word and “ay” is added, so “first” becomes “irst-fay.” Words that start with a vowel have “hay” added to the end instead (“apple” becomes “apple-hay”). Keep in mind the details about UTF-8 encoding!
 
 #### Stocks to a portfolio
+
 - Using a hash map and vectors, create a text interface to allow a user to add ticker symbols to a portfolio in a fund. For example, “Add AAPL to Alpha Fund I” or “Add GILD to Global Value Fund II.” Then let the user retrieve a list of all tickers in a portfolio or all tickers in the fund by portfolio name, sorted alphabetically.
 
 > I edited the original project suggestion to be about stocks in portfolios in a fund, rather than employees in a department in a company.
-````
+
+## Chapter 9. Errors
+
+Rust employs a modern approach to handling errors by splitting them into _recoverable_ and _unrecoverable_ error types.
+
+Normally, languages have _exceptions_ but do not distinguish from these two. However, requiring that developers handle errors at compile time leads to more robust programs that are better for the end-user.
+
+### `panic!` Unrecoverable errors
+
+One of Rust's remarkable features is its ability to minimize _undefined behavior_ which you might be familiar with from C-family languages. Handling unrecoverable errors with the `panic!` macro is one way that the language achieves this software safety.
+
+When rust panics it terminates the program and fully unwinds the stack. Though there are ways to stop this stack-unwinding behavior, we'll skip that for now.
+
+#### Crashing programs for fun
+
+`panic!` is just a macro so let's call it.
+
+```rust
+fn main() {
+    panic!("Crash the program!");
+}
+```
+
+Here's what this displays in the terminal when we run the program:
+
+```sh
+RUST_BACKTRACE=1 cargo run
+    Finished dev [unoptimized + debuginfo] target(s) in 0.00s
+     Running `target/debug/errors_uncrecoverable`
+thread 'main' panicked at src/main.rs:2:5:
+Crash the program!
+stack backtrace:
+   0: rust_begin_unwind
+             at /rustc/7cf61ebde7b22796c69757901dd346d0fe70bd97/library/std/src/panicking.rs:647:5
+   1: core::panicking::panic_fmt
+             at /rustc/7cf61ebde7b22796c69757901dd346d0fe70bd97/library/core/src/panicking.rs:72:14
+   2: errors_uncrecoverable::main
+             at ./src/main.rs:2:5
+   3: core::ops::function::FnOnce::call_once
+             at /rustc/7cf61ebde7b22796c69757901dd346d0fe70bd97/library/core/src/ops/function.rs:250:5
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+```
+
+When the compiler encounters this macro it stops the program and unwinds the stack from top to bottom, cleaning up memory that the program used along the way. In my opinion, this is _vastly better_ than with C-family languages that leaves the behavior undefined and often requires the operating system to clean up the broken pieces of the program's runtime.
+
+Let's create another type of error and watch it panic, with the backtrace included. For this, we'll divide by zero, undefined behavior even in mathematics!
+
+```rust
+#[allow(unconditional_panic)]
+fn main() {
+    let y = 0;
+    let should_panic = 1 / y;
+
+    println!("{}", should_panic);
+}
+```
+
+> The linter will catch this if you are using a modern version of Rust (I'm using 1.77.1) so we need to disable it with `#[allow(unconditional_panic)`.
+
+The panic:
+
+```sh
+RUST_BACKTRACE=1 cargo run
+    Finished dev [unoptimized + debuginfo] target(s) in 0.00s
+     Running `target/debug/errors_uncrecoverable`
+thread 'main' panicked at src/main.rs:6:24:
+attempt to divide by zero
+stack backtrace:
+   0: rust_begin_unwind
+             at /rustc/7cf61ebde7b22796c69757901dd346d0fe70bd97/library/std/src/panicking.rs:647:5
+   1: core::panicking::panic_fmt
+             at /rustc/7cf61ebde7b22796c69757901dd346d0fe70bd97/library/core/src/panicking.rs:72:14
+   2: core::panicking::panic
+             at /rustc/7cf61ebde7b22796c69757901dd346d0fe70bd97/library/core/src/panicking.rs:144:5
+   3: errors_uncrecoverable::main
+             at ./src/main.rs:6:24
+   4: core::ops::function::FnOnce::call_once
+             at /rustc/7cf61ebde7b22796c69757901dd346d0fe70bd97/library/core/src/ops/function.rs:250:5
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+```
+
+As you can see, our attempt to divide by zero didn't work very well, however, the panic saved us from gumming up the operating system with dirty bits in memory.
+
+To be clear, `panic!` should not be used _within_ a program to protect against run time errors explicitly.
+
+### Recoverable errors
+
+Rust's other error type is called _recoverable_ where a function propagates handle-able errors up to the caller via the `Result<T, E>` enum that you may recall from earlier.
+
+As a refresher, that enum is defined as follows:
+
+```rust
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+```
+
+In particular, recoverable errors are appropriately used when the caller can be expected to handle the error and do something useful in response. This is in contrast to `panic!` from above, which should be used when it is reasonable for the program to completely quit, limiting the caller's ability to handle or do anything further.
+
+#### Matching recoverability
+
+Rust's matching system was designed to handle errors safely in a first-class manner.
+
+Let's look at the following function which propagates its errors up to the caller and how matching makes this easy to use _and_ read.
+
+```rust
+use std::io::{self, };
+
+fn validate_username(username: &str) -> Result<String, io::Error> {
+    match username.is_ascii() {
+        true => Ok(username.to_string()),
+        _ => Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Username must be ASCII",
+        )),
+    }
+}
+```
+
+The function above checks if a username is valid ASCII and returns an okay `Result` with the username as a string or an error indicating the problem.
+
+Naively we could just handle this and print out the issue to the user, e.g.
+
+```rust
+fn main() {
+    let username = "my_username";
+    match validate_username(username) {
+        Ok(_) => {
+            print!("{} username is good to go!", username);
+        }
+        Err(e) => {
+            print!("{} username is not valid: {}", username, e);
+        }
+    }
+}
+```
+
+Good output looks like
+
+```sh
+❯ cargo run
+   Compiling errors_recoverable v0.1.0 (/home/jason/repos/learning-rust/errors_recoverable)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.11s
+     Running `target/debug/errors_recoverable`
+my_username username is good to go!
+```
+
+And bad output like
+
+```sh
+❯ cargo run
+   Compiling errors_recoverable v0.1.0 (/home/jason/repos/learning-rust/errors_recoverable)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.09s
+     Running `target/debug/errors_recoverable`
+my_username ❤️ username is not valid: Username must be ASCII
+```
+
+That's okay but imagine that we're actually taking this input from the user inside of a loop. Wouldn't it be nice to do something such as
+
+```rust
+fn main() {
+    let username = "my_username ❤️";
+    match validate_username(username) {
+        Ok(_) => {
+            print!("{} username is good to go!", username);
+        }
+        Err(e) => match e.kind() {
+            io::ErrorKind::InvalidInput => {
+                // ask the user for another user name
+                println!("Handling InvalidInput error:");
+                println!("{} username is not valid: {}", username, e);
+            }
+            _ => {
+                println!("{} username is not valid: {}", username, e);
+            }
+        },
+    }
+}
+```
+
+See how we handle that `InvalidInput` error type explicitly?
+
+```sh
+❯ cargo run
+   Compiling errors_recoverable v0.1.0 (/home/jason/repos/learning-rust/errors_recoverable)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.09s
+     Running `target/debug/errors_recoverable`
+Handling InvalidInput error:
+my_username ❤️ username is not valid: Username must be ASCII
+```
+
+And it shows the additional input error on the console.
+
+#### The `?` operator
+
+The [`?`](https://doc.rust-lang.org/std/result/index.html#the-question-mark-operator-) operator allows us to handle much of the boilerplate associated with propagating errors up the call stack.
+
+Take, for example, the following simplification.
+
+```rust
+use std::fs::File;
+use std::io::prelude::*;
+use std::io;
+
+struct Info {
+    name: String,
+    age: i32,
+    rating: i32,
+}
+
+fn write_info(info: &Info) -> io::Result<()> {
+    // Early return on error
+    let mut file = match File::create("my_best_friends.txt") {
+           Err(e) => return Err(e),
+           Ok(f) => f,
+    };
+    if let Err(e) = file.write_all(format!("name: {}\n", info.name).as_bytes()) {
+        return Err(e)
+    }
+    if let Err(e) = file.write_all(format!("age: {}\n", info.age).as_bytes()) {
+        return Err(e)
+    }
+    if let Err(e) = file.write_all(format!("rating: {}\n", info.rating).as_bytes()) {
+        return Err(e)
+    }
+    Ok(())
+}
+```
+
+Turns into the following with the `?` operator.
+
+```rust
+use std::fs::File;
+use std::io::prelude::*;
+use std::io;
+
+struct Info {
+    name: String,
+    age: i32,
+    rating: i32,
+}
+
+fn write_info(info: &Info) -> io::Result<()> {
+    let mut file = File::create("my_best_friends.txt")?;
+    // Early return on error
+    file.write_all(format!("name: {}\n", info.name).as_bytes())?;
+    file.write_all(format!("age: {}\n", info.age).as_bytes())?;
+    file.write_all(format!("rating: {}\n", info.rating).as_bytes())?;
+    Ok(())
+}
+```
+
+> The above examples are directly from the Standard Library [documentation](https://doc.rust-lang.org/std/result/index.html#the-question-mark-operator-).
+
+Anything that returns a `Result<T, E>` type can use the question mark operator.
+
+#### Thinking about recoverable versus nonrecoverable
+
+So where should you use the two? The [Rust book covering the topic](https://doc.rust-lang.org/book/ch09-03-to-panic-or-not-to-panic.html#guidelines-for-error-handling) has a fantastic rule-of-thumb:
+
+> "It’s advisable to have your code panic when it’s possible that your code could end up in a bad state."
+
+Tests, examples and quick prototypes should generally use the `panic!` macro so that you get rapid feedback. You can also use `.unwrap` and `.expect` methods to achieve this result.
+
+But production code, especially library code, should typically propagate an error if you can think of how to handle it. That said, one rare instance where you should use unrecoverable errors is when you have more information - via human context - than the compiler.
+
+This example from the Rust book outlines where a human has more information than the compiler does.
+
+```rust
+use std::net::IpAddr;
+
+let home: IpAddr = "127.0.0.1"
+    .parse()
+    .expect("Hardcoded IP address should be valid");
+```
+
+We use `expect` here because we know that `"127.0.0.1"` is a valid IP address but there's no way for the compiler to know that.
+
+#### Custom types
+
+To better organize and simplify validating contracts for your functions you should use custom types. This leverages the Rust type system at compile time, saving a lot of boilerplate error handling you otherwise would need to implement.
+
+Remember our ads from earlier? Let's use those to show what we're talking about here by adding some validation to the inputs.
+
+```rust
+#[derive(Debug)]
+pub struct VideoAd {
+    ad_title: String,
+    budget: u32,
+    target_url: String,
+}
+
+impl VideoAd {
+    pub fn new(ad_title: String, budget: u32, target_url: String) -> VideoAd {
+        if budget < 50 {
+            panic!("The budget must be at least $50 USD! Got {}", budget);
+        }
+        if !target_url.starts_with("https://") {
+            panic!(
+                "The target_url must start with the https:// protocol. Got {}",
+                target_url,
+            );
+        }
+        VideoAd {
+            ad_title,
+            budget,
+            target_url,
+        }
+    }
+}
+```
+
+Now we've added some validation to the `VideoAd` type. If users input a budget less than 50 or a `target_url` that doesn't start with `https://` we stop the program in its tracks with a useful compiler error.
+
+In further refactoring, we'd probably want to alter the return type of `new` to return a `Result<VideoAd, io::Error>` and properly return an error with the messages, rather than panicking.
+
