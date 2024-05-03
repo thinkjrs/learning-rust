@@ -71,6 +71,14 @@
         * [The `?` operator](#the--operator)
         * [Thinking about recoverable versus nonrecoverable](#thinking-about-recoverable-versus-nonrecoverable)
         * [Custom types](#custom-types)
+* [Chapter 10. Reference lifetimes, generics and traits](#chapter-10-reference-lifetimes-generics-and-traits)
+    * [Defining reference lifetimes](#defining-reference-lifetimes)
+    * [Leveraging generic types](#leveraging-generic-types)
+    * [Making generics useful with traits](#making-generics-useful-with-traits)
+* [Chapter 11. Testing](#chapter-11-testing)
+    * [Writing unit tests in Rust](#writing-unit-tests-in-rust)
+    * [Writing integration tests in Rust](#writing-integration-tests-in-rust)
+    * [Running tests](#running-tests)
 
 <!-- vim-markdown-toc -->
 
@@ -1505,3 +1513,18 @@ Now we've added some validation to the `VideoAd` type. If users input a budget l
 
 In further refactoring, we'd probably want to alter the return type of `new` to return a `Result<VideoAd, io::Error>` and properly return an error with the messages, rather than panicking.
 
+## Chapter 10. Reference lifetimes, generics and traits
+
+### Defining reference lifetimes
+
+### Leveraging generic types
+
+### Making generics useful with traits
+
+## Chapter 11. Testing
+
+### Writing unit tests in Rust
+
+### Writing integration tests in Rust
+
+### Running tests
