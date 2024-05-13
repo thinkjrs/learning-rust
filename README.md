@@ -25,7 +25,7 @@
         * [Integer overflow](#integer-overflow)
         * [String and `char` literals](#string-and-char-literals)
     * [Tuples and arrays](#tuples-and-arrays)
-    * [Statments and expressions](#statments-and-expressions)
+    * [Statements and expressions](#statements-and-expressions)
 * [Chapter 4. Ownership](#chapter-4-ownership)
     * [Stack versus heap](#stack-versus-heap)
         * [The stack](#the-stack)
@@ -497,7 +497,7 @@ let my_array = [1, 2, 3];
 let my_array = [3; 1028]; // 1028 elements all with the value of 3
 ```
 
-### Statments and expressions
+### Statements and expressions
 
 Rust is an expression-based language. We'll skip over basic "statements" like `let x = 42` and jump right to the meat on the bone.
 
