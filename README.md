@@ -1515,7 +1515,16 @@ In further refactoring, we'd probably want to alter the return type of `new` to 
 
 ## Chapter 10. Reference lifetimes, generics and traits
 
+Reference lifetimes, generics and traits are three language features that make Rust extremely extensible, as well as uniquely safe, for a low-level language.
+
+Code reuse is fundamental principal of quality software engineering. It reduces the error surface, speeds up debugging and allows others to better understand the code they're reading. Generics and traits are critical to being able to accomplish this in Rust.
+
+Lastly, specifying how long a reference lives using function parameters and return values is incredibly useful, though likely new to most developers as this feature of the Rust language is somewhat unique versus other languages.
+
 ### Defining reference lifetimes
+
+Put simply, reference lifetimes allow developers to define how long a reference to some address in memory lives.
+
 
 ### Leveraging generic types
 
