@@ -73,6 +73,10 @@
         * [Custom types](#custom-types)
 * [Chapter 10. Reference lifetimes, generics and traits](#chapter-10-reference-lifetimes-generics-and-traits)
     * [Defining reference lifetimes](#defining-reference-lifetimes)
+        * [Lifetime annotation](#lifetime-annotation)
+        * [Exploring the lifetime contract](#exploring-the-lifetime-contract)
+        * [Guidelines](#guidelines)
+        * [Getting formal](#getting-formal)
     * [Leveraging generic types](#leveraging-generic-types)
     * [Making generics useful with traits](#making-generics-useful-with-traits)
 * [Chapter 11. Testing](#chapter-11-testing)
@@ -1523,8 +1527,182 @@ Lastly, specifying how long a reference lives using function parameters and retu
 
 ### Defining reference lifetimes
 
-Put simply, reference lifetimes allow developers to define how long a reference to some address in memory lives.
+Put simply, reference lifetimes are the scope in which a reference lives. And as an amazing feature, Rust allows developers to define how long references to some addresses in memory live. And when there's ambiguity, Rust actually _requires_ developers to annotate reference lifetimes.
 
+Remember when we claimed Rust was made for safety? This is one of its defining features in achieving that objective by preveting dangling references. Let's dig into an example of a dangler.
+
+```rust
+// will not compile
+fn main() {
+    let first;
+
+    {
+        let first_second = "Hello";
+        first = &first_second;
+    }
+    println!("{}, world!", first);
+}
+```
+
+You should see an error in your editor that says something similar to the following, when hovering over the `first = &first_second;` line:
+
+```
+`first_second` does not live long enough
+borrowed value does not live long enough (rustc E0597)
+──────────────────────────────────────────────────────
+https://doc.rust-lang.org/error-index.html#E0597
+```
+
+And the compiler is even more helpful when hovering over the last bracket defining the inner scope, which tells us exactly what's going on.
+
+```
+`first_second` dropped here while still borrowed (rustc E0597)
+──────────────────────────────────────────────────────────────
+https://doc.rust-lang.org/error-index.html#E0597
+```
+
+Ultimate the code won't compile because we attempt to use the reference to a memory location in the inner scope in the outer scope.
+
+Fixing this is simple; remove the inner scope.
+
+```rust
+fn main() {
+    let first;
+
+    let first_second = "Hello";
+
+    first = &first_second;
+
+    println!("{}, world!", first);
+}
+```
+
+#### Lifetime annotation
+
+Annotating lifetimes simplify tells the Rust compiler how multiple references should interact with one another.
+
+The syntax for annotations starts with an apostraphe `'` and are by convention very short, e.g. `'a`. You can use them in function signatures, parameters and return statement annotations.
+
+For example, the function below takes two vectors of integers and compares which has the greater sum over all their elements.
+
+```rust
+fn bigger_sum<'a>(first: &'a Vec<i32>, second: &'a Vec<i32>) -> &'a Vec<i32> {
+    let sum_first: i32 = first.iter().sum();
+    let sum_second: i32 = second.iter().sum();
+
+    if sum_first > sum_second {
+        first
+    } else {
+        second
+    }
+}
+```
+
+The function above says a few things to the compiler. It says that **for some lifetime `'a`**, defined by `<'a>`:
+
+- the parameters `first` and `second` each must live at least as long as `'a`, and
+- the reference returned from the function will live at least as long as `'a`.
+
+#### Exploring the lifetime contract
+
+Using our function from above, let's explore how this can be used and the types of errors to expect when misused.
+
+```rust
+fn main() {
+    let first: Vec<i32> = vec![1, 2, 3, 4];
+    let second: Vec<i32> = vec![-1, 2, 3, 4];
+
+    bigger_sum(&first, &second);
+}
+```
+
+The above works without a hitch, and is obvious that it does; afterall, `first` and `second` clearly have the same lifespan.
+
+```rust
+fn main() {
+    let second: Vec<i32> = vec![-1, 2, 3, 4];
+
+    {
+        let third: Vec<i32> = vec![2, 3, 4, 5];
+        bigger_sum(&second, &third);
+    }
+}
+```
+
+In the above we clearly have different lifetimes, i.e. `third` has an inner scope that is clearly smaller than `second`. The compiler substitutes the smaller of the lifetimes necessary into `'a`.
+
+Now let's cause some breakage.
+
+```rust
+fn main() {
+    let second: Vec<i32> = vec![-1, 2, 3, 4];
+
+    let should_be_second: &Vec<i32>;
+
+    {
+        let forth: Vec<i32> = vec![2, 3, 4];
+        should_be_second = bigger_sum(&second, &forth);
+    }
+    println!("{:?}", should_be_second);
+}
+```
+
+In the function above, compiler errors start on the declaration of `forth`:
+
+```
+binding `forth` declared here (rustc E0597)
+────────────────────────────────────────────────
+https://doc.rust-lang.org/error-index.html#E0597
+```
+
+Happen again on the usage of `&forth` in the call to `bigger_sum`:
+
+```
+`forth` does not live long enough
+borrowed value does not live long enough (rustc E0597)
+──────────────────────────────────────────────────────
+https://doc.rust-lang.org/error-index.html#E0597
+```
+
+And lastly the compiler warns us again on the inner-scoped bracket close:
+
+```
+`forth` dropped here while still borrowed (rustc E0597)
+───────────────────────────────────────────────────────
+https://doc.rust-lang.org/error-index.html#E0597
+```
+
+#### Guidelines
+
+Functions cannot return lifetimes that have nothing to do with the parameter lifetimes. The below will fail miserably:
+
+```rust
+fn failing_lifetime_function<'a>(x: &i32,) -> &'a i32 {
+    let result: i32 = 42;
+    &result
+}
+```
+
+Your compiler should say something about the `&result` reference because it has nothing to do with the lifetime of parameter `x`.
+
+```
+cannot return reference to local variable `result`
+returns a reference to data owned by the current function (rustc E0515)
+───────────────────────────────────────────────────────────────────────
+https://doc.rust-lang.org/error-index.html#E0515
+```
+
+#### Getting formal 
+
+Lifetime annotations on function method parameters are called _input lifetimes_ and those on return values _output lifetimes_. Importantly, a developer does
+not always have to define lifetimes because Rust performs lifetime elision
+for common, deterministic behavior. 
+
+The rules Rust uses are as follows:
+
+1. _input lifetimes_ - assign a different lifetime to each parameter, e.g. `fn ltime(x: &i32, y: &str)` gets `fn ltime<'a, 'b>(x: &'a i32, y: &'b str)`. 
+2. _output lifetimes_ - if a function has a single parameter all lifetimes are assigned the same way, i.e. `fn ltime(x: &i32)` is `fn ltime<'a>(x: &'a i32) -> &'a i32`.
+3. _output lifetimes_ - if one input is `&self` or `&mut self` all lifetimes are assigned `self`. If you sit and consider this rule, it makes a lot of sense, because this implies we're working on `&self` so everything needs to live at least as long as the reference to `self`. 
 
 ### Leveraging generic types
 
