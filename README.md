@@ -78,7 +78,13 @@
         * [Guidelines](#guidelines)
         * [Getting formal](#getting-formal)
     * [Leveraging generic types](#leveraging-generic-types)
+        * [Type parameters](#type-parameters)
+            * [Other items changed](#other-items-changed)
+        * [Using our newly generic `bigger_sum`](#using-our-newly-generic-bigger_sum)
+        * [Generic types and structs](#generic-types-and-structs)
+        * [Generics on methods](#generics-on-methods)
     * [Making generics useful with traits](#making-generics-useful-with-traits)
+        * [Implementing custom traits](#implementing-custom-traits)
 * [Chapter 11. Testing](#chapter-11-testing)
     * [Writing unit tests in Rust](#writing-unit-tests-in-rust)
     * [Writing integration tests in Rust](#writing-integration-tests-in-rust)
@@ -1692,21 +1698,278 @@ returns a reference to data owned by the current function (rustc E0515)
 https://doc.rust-lang.org/error-index.html#E0515
 ```
 
-#### Getting formal 
+#### Getting formal
 
 Lifetime annotations on function method parameters are called _input lifetimes_ and those on return values _output lifetimes_. Importantly, a developer does
 not always have to define lifetimes because Rust performs lifetime elision
-for common, deterministic behavior. 
+for common, deterministic behavior.
 
 The rules Rust uses are as follows:
 
-1. _input lifetimes_ - assign a different lifetime to each parameter, e.g. `fn ltime(x: &i32, y: &str)` gets `fn ltime<'a, 'b>(x: &'a i32, y: &'b str)`. 
+1. _input lifetimes_ - assign a different lifetime to each parameter, e.g. `fn ltime(x: &i32, y: &str)` gets `fn ltime<'a, 'b>(x: &'a i32, y: &'b str)`.
 2. _output lifetimes_ - if a function has a single parameter all lifetimes are assigned the same way, i.e. `fn ltime(x: &i32)` is `fn ltime<'a>(x: &'a i32) -> &'a i32`.
-3. _output lifetimes_ - if one input is `&self` or `&mut self` all lifetimes are assigned `self`. If you sit and consider this rule, it makes a lot of sense, because this implies we're working on `&self` so everything needs to live at least as long as the reference to `self`. 
+3. _output lifetimes_ - if one input is `&self` or `&mut self` all lifetimes are assigned `self`. If you sit and consider this rule, it makes a lot of sense, because this implies we're working on `&self` so everything needs to live at least as long as the reference to `self`.
 
 ### Leveraging generic types
 
+Generic types allow us to build structs, enums and function signatures that take multiple concrete types, greatly reducing code boilerplate, helping developers adhere to the DRY - don't repeat yourself - paradigm.
+
+This makes code safer, easier to understand, maintain and debug.
+
+#### Type parameters
+
+Naming a type parameter in Rust is flexible; they can be anything you want. That said, we'll traditionally use and start with `T`. Let's see this in action
+with our `bigger_sum` function from the earlier section on reference lifetimes.
+
+In particular, let's refactor that function to take Vectors of `T`. Here's what it looked like before.
+
+```rust
+fn bigger_sum<'a>(first: &'a Vec<i32>, second: &'a Vec<i32>) -> &'a Vec<i32> {
+    // find sums of each
+    let sum_first: i32 = first.iter().sum();
+    let sum_second: i32 = second.iter().sum();
+    // return vector with larger sum
+    if sum_first > sum_second {
+        println!("The first vector has a larger sum: {}", sum_first);
+        first
+    } else {
+        println!("The second vector has a larger sum: {}", sum_second);
+        second
+    }
+}
+```
+
+Now we're going to add some traits, which we'll cover in detail over the next section, and refactor one line to make this bad boy work with pretty much any non-floating point number.
+
+```rust
+fn bigger_sum<'a, T>(first: &'a Vec<T>, second: &'a Vec<T>) -> &'a Vec<T>
+where
+    T: 'a + std::iter::Sum<&'a T> + std::cmp::PartialOrd + std::fmt::Display,
+{
+    // find sums of each
+    let sum_first: T = first.iter().sum();
+    let sum_second: T = second.iter().sum();
+    // return vector with larger sum
+    if sum_first > sum_second {
+        println!("The first vector has a larger sum: {}", sum_first);
+        first
+    } else {
+        println!("The second vector has a larger sum: {}", sum_second);
+        second
+    }
+}
+```
+
+What we need to focus on here is the `T` where we allow the `first` and `second` input parameters to be of type `T`. In addition, we now allow the `sum_first` and `sum_second` function variables to take type `T`. Lastly, we return a reference to a Vector of type `T`.
+
+We did this by specifying in the signature next to the reference lifetime `T` using a comma and instead of `i32` in the parameters and function replacing those with `T`. If you're familiar with C++ or other languages that use generics, this syntax should be somewhat familiar to you.
+
+##### Other items changed
+
+In addition to the now generic types we added _traits_ that restrict the type `T` to types `T` that have only certain capabilities. Those capabilities are listed after the `where T:` clause:
+
+- `'a`
+- `std::iter::Sum<&'a T>`
+- `std::cmp::PartialOrd`
+- `std::fmt::Display`
+
+In the next section we'll dig into these in more detail.
+
+#### Using our newly generic `bigger_sum`
+
+Now we can do things like the below, where we compare Vectors that store types like `u16`, `usize` and `i32` from before.
+
+> We can use anything that has the [`std::cmp::PartialOrd`](https://doc.rust-lang.org/std/cmp/trait.PartialOrd.html) trait!
+
+```rust
+fn main() {
+    let first: Vec<u16> = vec![1, 2, 3, 4];
+    let second: Vec<u16> = vec![1, 2, 3, 4, 5];
+
+    bigger_sum(&first, &second);
+
+    {
+        let third: Vec<u16> = vec![2, 3, 4, 5];
+        bigger_sum(&second, &third);
+    }
+    {
+        let third: Vec<usize> = vec![2, 3, 4, 5];
+        let forth: Vec<usize> = vec![2, 3, 4, 5];
+        bigger_sum(&third, &forth);
+    }
+```
+
+#### Generic types and structs
+
+Structs in Rust can use generic types so that they are more flexible. Let's we're making an interactive video game ad for a draft beer restaurant.
+
+First, for funsies, let's define our types of beer:
+
+```rust
+enum BeerType {
+    IPA,
+    Kolsch,
+    Lager,
+    Stout,
+    Sour,
+}
+```
+
+Not exhaustive but that lineup should please pretty much any beer lover.
+
+Next we'll use this in a struct to model a pint glass, a.k.a. the thing you drink beer from.
+
+```rust
+struct PintGlass<T> where T: std::cmp::PartialOrd {
+    beer: BeerType,
+    price: T,
+    is_empty: bool,
+}
+```
+
+We've used the generic `T` to allow the instantiator of the `PintGlass` struct flexibility in using pretty much any integer type to model the price.
+
+> If you've ever built accounting paradigms into software it's a bad idea to use floating point numbers for prices. Watch [this famous movie](https://www.youtube.com/watch?v=yZjCQ3T5yXo) and consider why.
+
+Now we can use it like so, allowing for even the strangest pricing models. Let's assume the below drinks are from a place called "VC Bar".
+
+```rust
+fn main() {
+    let first_pint = PintGlass {
+        beer: BeerType::IPA,
+        price: 5,
+        is_empty: true,
+    };
+
+    let second_pint = PintGlass {
+        beer: BeerType::Stout,
+        price: 6,
+        is_empty: true,
+    };
+
+    // there's a deal with the third pint that the restaurant pays the customer
+    // 1 unit of currency
+    let third_pint = PintGlass {
+        beer: BeerType::Kolsch,
+        price: -1,
+        is_empty: true,
+    };
+
+    // then because the customer is drunk they double charge them
+    // let's call this establishment "VC Bar"
+    let forth_pint = PintGlass {
+        beer: BeerType::Lager,
+        price: 12,
+        is_empty: false,
+    };
+}
+```
+
+Assuming the above is modeling one individual sitting at this miserably misleading establishment, the `PintGlass` struct proves shockingly flexible, thanks to generic types.
+
+#### Generics on methods
+
+Now we can add a method or two to make the `PintGlass` struct even more powerful.
+
+Let's add a `set_to_empty` method on the struct.
+
+```rust
+impl<T> PintGlass<T>
+where
+    T: std::cmp::PartialOrd,
+{
+    fn set_to_empty(&mut self) {
+        self.is_empty = true;
+    }
+}
+```
+
+Notice how we need to add the generic type to the `impl<T>` and restate the traits. Now we can use it like so (slightly modifying the above to make `forth_pint` mutable.
+
+```rust
+fn main() {
+    forth_pint.set_to_empty();
+
+    // though shady, the business model obviously works
+    let fifth_pint = PintGlass {
+        beer: BeerType::IPA,
+        price: 12,
+        is_empty: false,
+    };
+}
+```
+
+Now we're able to fully capture a misleading business model that makes a ton of money while endangering its customers, while maintaining code safety ourselves.
+
+Isn't that why you're learning Rust?
+
 ### Making generics useful with traits
+
+Now we can finally dive into how to restrict generic types so that they're actually useful. _Traits_ in Rust simply outline what things a type can do - functionality specific to a type.
+
+We saw this when we implemented the `PintGlass` struct and specified the `std::cmp::PartialOrd` for type `T`.
+
+We did this so that we could do things such as the following.
+
+```rust
+fn main() {
+    let pints = vec![first_pint, second_pint, third_pint, forth_pint, fifth_pint];
+    let mut total_sales: i32 = 0;
+    for pint in pints.iter() {
+        total_sales += pint.price;
+    }
+    println!("The customer has paid {} to get black out drunk", total_sales);
+}
+```
+
+Now thus far, we've only _used_ traits, not defined them. Let's do the latter now by adding a trait `Display` that will define a `print` method so that we can output the contents of a `PintGlass`.
+
+> Based on our earlier example, maybe it should be named "puke"!
+
+#### Implementing custom traits
+
+To implement a trait you need to first define it and then add it to the `impl` block for the struct you want.
+
+Define it like this.
+
+```rust
+pub trait Display {
+    fn print(&self);
+}
+```
+
+Then we'll add it using a `impl` plus `for`, for example.
+
+```rust
+impl<T> Display for PintGlass<T>
+where
+    T: std::cmp::PartialOrd + std::fmt::Display,
+{
+    fn print(&self) {
+        println!(
+            "{}",
+            format!(
+                "Beer {:?}, price {}, is empty? {}",
+                self.beer, self.price, self.is_empty
+            )
+        );
+    }
+}
+
+// add the Debug trait to your BeerType so it can be printed...
+#[derive(Debug)]
+enum BeerType {
+...
+}
+```
+
+Now you can use the `print` method in calling code.
+
+```rust
+fn main() {
+    pints[4].print();
+}
+```
 
 ## Chapter 11. Testing
 
