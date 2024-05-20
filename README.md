@@ -85,6 +85,8 @@
         * [Generics on methods](#generics-on-methods)
     * [Making generics useful with traits](#making-generics-useful-with-traits)
         * [Implementing custom traits](#implementing-custom-traits)
+        * [Adding a default implementation](#adding-a-default-implementation)
+        * [`where` clauses - Trait Bounds](#where-clauses---trait-bounds)
 * [Chapter 11. Testing](#chapter-11-testing)
     * [Writing unit tests in Rust](#writing-unit-tests-in-rust)
     * [Writing integration tests in Rust](#writing-integration-tests-in-rust)
@@ -1968,6 +1970,57 @@ Now you can use the `print` method in calling code.
 ```rust
 fn main() {
     pints[4].print();
+}
+```
+
+Now if we want to also make a `WineGlass` struct, we can add a `Display` trait to each type and use it with the `print` method, so that each type has its own way of printing how we'd like to represent that particular struct.
+
+> _Note: In real life, we'd want to implement the standard library `Display` trait, not our own!_
+
+#### Adding a default implementation
+
+We probably want to have a basic default that at least says what struct we're printing. Here's how to do that, by adding to the trait definition.
+
+```rust
+pub trait Display {
+    fn print(&self) {
+        println!("Some type of glass");
+    }
+}
+```
+
+Now all of our structs that implement any methods for the `Display` trait will have the `print` method by default.
+
+#### `where` clauses - Trait Bounds
+
+We saw ealier in our implementation of the `PintGlass` struct the usage of a `where` clause, which is how we specify _Trait Bounds_ in Rust. These allow us to specify the types and their traits that are allowed.
+
+In particular, only those types with the implemented traits are allowed, when specified by the trait bound.
+
+```rust
+struct PintGlass<T>
+where
+    T: std::cmp::PartialOrd,
+{
+    beer: BeerType,
+    price: T,
+    is_empty: bool,
+}
+```
+
+In the `PintGlass` struct, type `T` must have the `std::cmp::PartialOrd` trait.
+
+We can also specify a trait bound for a return type, however, we'll cover this in more detail in a proceeding chapter.
+
+For now, returning a simple type looks like the below, for example.
+
+```rust
+fn return_something_with_display_trait() -> impl Display {
+    PintGlass {
+        beer: BeerType::IPA,
+        price: 12,
+        is_empty: false,
+    }
 }
 ```
 

@@ -14,6 +14,7 @@ where
         second
     }
 }
+
 struct PintGlass<T>
 where
     T: std::cmp::PartialOrd,
@@ -33,8 +34,11 @@ where
 }
 
 pub trait Display {
-    fn print(&self);
+    fn print(&self) {
+        println!("Some type of glass");
+    }
 }
+
 impl<T> Display for PintGlass<T>
 where
     T: std::cmp::PartialOrd + std::fmt::Display,
