@@ -88,7 +88,9 @@
         * [Adding a default implementation](#adding-a-default-implementation)
         * [`where` clauses - Trait Bounds](#where-clauses---trait-bounds)
 * [Chapter 11. Testing](#chapter-11-testing)
-    * [Writing unit tests in Rust](#writing-unit-tests-in-rust)
+    * [Unit tests in Rust](#unit-tests-in-rust)
+        * [Unit testing lib code](#unit-testing-lib-code)
+        * [Unit testing main code](#unit-testing-main-code)
     * [Writing integration tests in Rust](#writing-integration-tests-in-rust)
     * [Running tests](#running-tests)
 
@@ -2026,7 +2028,97 @@ fn return_something_with_display_trait() -> impl Display {
 
 ## Chapter 11. Testing
 
-### Writing unit tests in Rust
+Testing is probably the most important task in which a programmer engages during the software crafting process.
+
+Though it is certainly no silver bullet for guaranteeing software quality, it is a fantastic way to show the presence of bugs for known/expected behavior. In addition, modern tooling can automatically display test coverage ratios in nearly any language.
+
+### Unit tests in Rust
+
+Unit testing in Rust is quite straightforward. One thing that may be somewhat foreign from other languages is that test code is typically included alongside the module function code in Rust.
+
+In particular, Rust uses an attribute `#[cfg(test)]` that specifies to the compiler to conditionally compile the code marked beneath it. This way, test and functionality code are kept close to one another but that test code is not included when the code is compiled.
+
+> _Note: It's typical to use that test marker with test setup code and actual testing code._
+
+#### Unit testing lib code
+
+Because Rust language design promotes the use of _separation of concerns_, you'll write most of your unit tests in `src/lib.rs` files.
+
+So let's write some trivial code for testing purposes, make it fail and then make it pass. Welcome to the wheel of development.
+
+Let's add the test first.
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn multiply_works() {
+        assert_eq!(multiply(&2, &2), 4);
+    }
+}
+```
+
+This won't work yet because we don't have the `multiply` function even declared.
+
+```rust
+// src/lib.rs
+
+fn multiply(lhs: &i32, rhs: &i32) -> i32 {
+    1
+}
+```
+
+Now run the tests with `cargo test`. Bask in that failure. And now let's clean it up with a correct implementation for `multiply`.
+
+```rust
+// src/lib.rs
+
+fn multiply(lhs: &i32, rhs: &i32) -> i32 {
+    lhs * rhs
+}
+```
+
+Now run those tests again and bask in your passing glory. Your output should look something like the following. 
+
+```
+29% ❯ cargo test
+    Finished test [unoptimized + debuginfo] target(s) in 0.00s
+     Running unittests src/main.rs (target/debug/deps/test_examples-b2e0b55724fa4029)
+
+running 1 test
+test tests::test_multiply ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+```
+#### Unit testing main code
+
+Though it's not recommended, because your functionality should live in another module and be tested there, you can certainly test code living in the `main` function.
+
+```rust
+fn multiply(lhs: &i32, rhs: &i32) -> i32 {
+    lhs * rhs
+}
+
+fn main() {
+    let result = multiply(&2, &2);
+    println!("result: {}", result);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_multiply() {
+        assert_eq!(multiply(&2, &2), 4);
+    }
+}
+```
+
+Run it with `cargo test` and watch that glorious passage.
 
 ### Writing integration tests in Rust
 
