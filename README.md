@@ -91,6 +91,11 @@
     * [Unit tests in Rust](#unit-tests-in-rust)
         * [Unit testing lib code](#unit-testing-lib-code)
         * [Unit testing main code](#unit-testing-main-code)
+        * [Built-in tools for unit testing](#built-in-tools-for-unit-testing)
+            * [`should_panic`](#should_panic)
+            * [Other macros](#other-macros)
+            * [Custom messages](#custom-messages)
+            * [Leveraging `Result<T, E>`](#leveraging-resultt-e)
     * [Writing integration tests in Rust](#writing-integration-tests-in-rust)
     * [Running tests](#running-tests)
 
@@ -2080,7 +2085,7 @@ fn multiply(lhs: &i32, rhs: &i32) -> i32 {
 }
 ```
 
-Now run those tests again and bask in your passing glory. Your output should look something like the following. 
+Now run those tests again and bask in your passing glory. Your output should look something like the following.
 
 ```
 29% ❯ cargo test
@@ -2093,6 +2098,7 @@ test tests::test_multiply ... ok
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 ```
+
 #### Unit testing main code
 
 Though it's not recommended, because your functionality should live in another module and be tested there, you can certainly test code living in the `main` function.
@@ -2120,6 +2126,157 @@ mod tests {
 
 Run it with `cargo test` and watch that glorious passage.
 
+#### Built-in tools for unit testing
+
+Rust has many built-in tools you can and should use for organizing and communicating information from your test runs. It's common to have a CICD step in your build and/or development process that runs these and communicating what went wrong, when and where is critical. Rust makes this simple.
+
+##### `should_panic`
+
+Since your tests are just Rust code you can and should make them `panic!` when you have code that _must_ happen or _can't_ happen, as in, you expect it to panic.
+
+All you have to do is mark it with `#[should_panic]`.
+
+```rust
+#[cfg(test)]
+mod tests {
+    #[test]
+    #[should_panic]
+    fn ima_panic() {
+        panic!("Make the test run stop and this test fail!");
+    }
+}
+```
+
+Running this will produce a huge FAIL and stop the remaining tests from executing.
+
+##### Other macros
+
+Other macros we can use include `assert!`, which checks truthiness, `assert_ne!`, which checks if something isn't equal, and of course, our already used `assert_eq!` macro which checks if something is equal.
+
+Let's see how we might use each of these.
+
+```rust
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn this_is_not_equal() { // this will pass
+        assert_ne!(multiply(&2, &2), 5);
+    }
+
+    #[test]
+    fn this_is_true() { // this will pass
+        assert!(multiply(&2, &2) == 4);
+    }
+}
+```
+
+##### Custom messages
+
+One of the issues large code bases face is testing complexity. When something fails we need to communicate what was supposed to happen and why it failed.
+
+Rust has a convenient ability to do that with its built-in test infrastructure.
+
+```rust
+    #[test]
+    fn this_is_not_equal() { // this will pass
+        assert_ne!(multiply(&2, &2), "2 * 2 != 5", 5);
+    }
+
+    #[test]
+    fn this_is_not_true() { // this will not pass
+        assert!(multiply(&2, &2) == 5, "2 * 2 != 5");
+    }
+```
+
+Now when we run the above with `cargo test` we get output that says what went on:
+
+```
+failures:
+
+---- tests::this_is_not_true stdout ----
+thread 'tests::this_is_not_true' panicked at src/lib.rs:29:9:
+2 * 2 != 5
+```
+
+##### Leveraging `Result<T, E>`
+
+Testing Rust code that returns a `Result<T, E>` is extremely convenient, as an `Err` value returned will fail calling code. Let's see this in action.
+
+```rust
+
+fn a_function_using_result() -> Result<bool, String> {
+    Ok(true)
+}
+
+#[test]
+fn test_using_result() -> Result<(), String> {
+    let ran_successfully = a_function_using_result()?; // Err value will fail here
+
+    if ran_successfully {
+        Ok(())
+    } else {
+        Err("Something terrible happened and we got an error. Spam your own phone number, developer, until someone picks up. Yell at them.".into())
+    }
+}
+```
+
 ### Writing integration tests in Rust
+
+Integration tests should test how your code interactions and are _external_ to your library code. Normally, we use a `tests` directory for these at the same level as your `src` directory. Cargo looks for this when you run the test command.
+
+> Ideally you want to mimic how an external client or developer will use this code when writing integration tests.
+
+Let's make that directory and add some integration testing code to it, which will be exactly the same as our unit test code at this point.
+
+```
+mkdir tests
+```
+
+```rust
+// tests/integration.rs
+use test_examples;
+
+#[test]
+fn it_multiplies_two_numbers() {
+    assert_eq!(test_examples::multiply(&2, &2), 4);
+}
+```
+
+Notice how we pull in `test_examples`, the name of this crate? This is necessary because each file inside the `tests` example is considered its own crate by the compiler. Secondly, we don't need the `cfg` configuration flag because this is a known directory for unit tests.
+
+Let's run this and see what happens.
+
+```
+❯ cargo test
+    Finished test [unoptimized + debuginfo] target(s) in 0.00s
+     Running unittests src/lib.rs (target/debug/deps/test_examples-8cbec1295e96061c)
+
+running 1 test
+test tests::test_multiply ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/test_examples-0965484333ee197a)
+
+running 1 test
+test tests::test_multiply ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/integration.rs (target/debug/deps/integration-90f1e0a063430ba2)
+
+running 1 test
+test it_multiplies_two_numbers ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests test_examples
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+Passing like a cop with flatulence.
 
 ### Running tests
